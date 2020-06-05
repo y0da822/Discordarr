@@ -39,13 +39,11 @@ radarr_api_key = parser.get('radarr', 'radarrapikey')
 write_log(my_log_file, "Loaded Radarr configuration.")
 radarrSession = requests.Session()
 
-
 # discord bot connection
 bot_prefix = parser.get('bot', 'botprefix')
 bot_token = parser.get('bot', 'bottoken')
 bot_channel = parser.get('bot', 'botchannel')
 bot = commands.Bot(command_prefix=bot_prefix)
-emoji = "\N{THUMBS UP SIGN}"
 write_log(my_log_file, "Connected to Discord bot api.")
 write_log(my_log_file, "Bot Prefix: " + bot_prefix)
 write_log(my_log_file, "Bot Channel: " + bot_channel)
@@ -80,11 +78,11 @@ async def checknew(ctx):
             # if the movie doesnt exist in radarr post to discord
             if movie.id not in ids:
                 embed = discord.Embed(title=movie.title + " [" + str(movie.id) + "]", colour=discord.Colour(0xb45818),
-                                      url="http://p2-plexseed1.mypetrone.com:7878",
+                                      url="http://image.tmdb.org/t/p/w185" + str(movie.poster_path),
                                       description=movie.overview)
                 embed.set_thumbnail(url="http://image.tmdb.org/t/p/w185" + str(movie.poster_path))
                 embed.set_author(name="Discordarr")
-                embed.set_footer(text="Released: " + movie.release_date)
+                embed.set_footer(text=movie.id)
                 await ctx.send(content=movie.title + " (Released: " + movie.release_date + ")", embed=embed)
 
                 write_log(my_log_file, "Title: " + movie.title + " [" + str(
@@ -94,6 +92,8 @@ async def checknew(ctx):
 
 @bot.command()
 async def getmovie(ctx, arg):
+    write_log(my_log_file, "GetMovie command requested tmdbid " + arg)
+
     # add tmdb movie id to radarr via apii
     movie = Movie()
     moviedetails = movie.details(arg)
@@ -121,14 +121,49 @@ async def getmovie(ctx, arg):
 
     # post to discord - completed message
     embed = discord.Embed(title=moviedetails.title + " [" + str(moviedetails.id) + "]", colour=discord.Colour(0x96ff00),
-                          url="http://p2-plexseed1.mypetrone.com:7878",
+                          url="http://image.tmdb.org/t/p/w185" + str(moviedetails.poster_path),
                           description=moviedetails.overview)
     embed.set_thumbnail(url="http://image.tmdb.org/t/p/w185" + str(moviedetails.poster_path))
     embed.set_author(name="Discordarr")
-    embed.set_footer(text="Released: " + moviedetails.release_date)
+    embed.set_footer(text=moviedetails.id)
     await ctx.send(content=moviedetails.title + " (Added to Radarr)", embed=embed)
 
     write_log(my_log_file, moviedetails.title + " has been added to Radarr, set to monitored and search has started!")
+
+
+@bot.event
+async def on_reaction_add(reaction, user):
+    write_log(my_log_file, "Reaction requested tmdbid " + str(reaction.message.embeds[0].footer.text))
+
+    # add tmdb movie id to radarr via apii
+    movie = Movie()
+    moviedetails = movie.details(int(reaction.message.embeds[0].footer.text))
+
+    # prepare dictionary json
+    movieaddjson = {"title": moviedetails.title,
+                    "qualityProfileId": 1,
+                    "titleSlug": moviedetails.title.lower().replace(' ', '-') + "-" + str(moviedetails.id),
+                    "images": [
+                        {"covertype": "poster", "url": "https://image.tmdb.org/t/p/w200" + moviedetails.poster_path}],
+                    "tmdbId": moviedetails.id,
+                    "profileId": 1,
+                    "year": int(datetime.strptime(moviedetails.release_date, '%Y-%m-%d').year),
+                    "rootFolderPath": "/movies/",
+                    "monitored": True,
+                    "addOptions": {"searchForMovie": True}
+                    }
+    write_log(my_log_file, "Add Movie Request: " + json.dumps(movieaddjson))
+
+    # post the add movie request
+    #radarraddmovie = radarrSession.post('{0}/api/movie?apikey={1}'.format(radarr_host_url, radarr_api_key),
+                                        #json=movieaddjson)
+
+    #write_log(my_log_file, str(radarraddmovie.json()))
+
+    # post to discord - completed message
+    bot.get_channel(bot_channel).send("OK")
+
+    #write_log(my_log_file, moviedetails.title + " has been added to Radarr, set to monitored and search has started!")
 
 
 @bot.event
