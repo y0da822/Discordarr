@@ -155,15 +155,16 @@ async def on_reaction_add(reaction, user):
     write_log(my_log_file, "Add Movie Request: " + json.dumps(movieaddjson))
 
     # post the add movie request
-    #radarraddmovie = radarrSession.post('{0}/api/movie?apikey={1}'.format(radarr_host_url, radarr_api_key),
-                                        #json=movieaddjson)
+    radarraddmovie = radarrSession.post('{0}/api/movie?apikey={1}'.format(radarr_host_url, radarr_api_key),
+                                         json=movieaddjson)
 
-    #write_log(my_log_file, str(radarraddmovie.json()))
+    write_log(my_log_file, str(radarraddmovie.json()))
 
     # post to discord - completed message
-    bot.get_channel(bot_channel).send("OK")
+    await bot.get_channel(reaction.message.channel.id).send(moviedetails.title + " has been added to Radarr, set to "
+                                                                                 "monitored and search has started!")
 
-    #write_log(my_log_file, moviedetails.title + " has been added to Radarr, set to monitored and search has started!")
+    write_log(my_log_file, moviedetails.title + " has been added to Radarr, set to monitored and search has started!")
 
 
 @bot.event
