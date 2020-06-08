@@ -30,7 +30,7 @@ write_log(my_log_file, "Loaded config file discordarr.config")
 tmdbapi = TMDb()
 tmdbapi.api_key = parser.get('tmdb', 'tmdbapikey')
 tmdbapi.language = parser.get('tmdb', 'tmdblanguage')
-tmdbapi.debug = False
+tmdbapi.debug = True
 write_log(my_log_file, "Loaded TMDB configuration.")
 
 # radarr connection
@@ -70,24 +70,24 @@ async def checknew(ctx):
     # get upcoming movies to blu ray from themoviedb
     movies = Movie()
     upcomingmovies = movies.upcoming()
-    write_log(my_log_file, "Check new releases for next " + parser.get('general', 'monthsaheadtocheck') + " months.")
 
     # go through all the movies that came out this month and if they dont exist in radarr post them to discord
     for movie in upcomingmovies:
-        if int(datetime.strptime(movie.release_date, "%Y-%m-%d").month) == int(datetime.now().month):
-            # if the movie doesnt exist in radarr post to discord
-            if movie.id not in ids:
-                embed = discord.Embed(title=movie.title + " [" + str(movie.id) + "]", colour=discord.Colour(0xb45818),
-                                      url="http://image.tmdb.org/t/p/w185" + str(movie.poster_path),
-                                      description=movie.overview)
-                embed.set_thumbnail(url="http://image.tmdb.org/t/p/w185" + str(movie.poster_path))
-                embed.set_author(name="Discordarr")
-                embed.set_footer(text=movie.id)
-                await ctx.send(content=movie.title + " (Released: " + movie.release_date + ")", embed=embed)
+        # if the movie doesnt exist in radarr post to discord
+        if movie.id not in ids:
+            embed = discord.Embed(title=movie.title + " [" + str(movie.id) + "]", colour=discord.Colour(0xb45818),
+                                  url="http://image.tmdb.org/t/p/w185" + str(movie.poster_path),
+                                  description=movie.overview)
+            embed.set_thumbnail(url="http://image.tmdb.org/t/p/w185" + str(movie.poster_path))
+            embed.set_author(name="Discordarr")
+            embed.set_footer(text=movie.id)
+            emoji = '\N{THUMBS UP SIGN}'
+            m = await ctx.send(content=movie.title + " (Released: " + movie.release_date + ")", embed=embed)
+            await m.add_reaction(emoji)
 
-                write_log(my_log_file, "Title: " + movie.title + " [" + str(
-                    movie.id) + "]" + "Release Date: " + movie.release_date + "Overview: "
-                          + movie.overview + "Poster Path: " + str(movie.poster_path))
+            write_log(my_log_file, "Title: " + movie.title + " [" + str(
+                movie.id) + "]" + "Release Date: " + movie.release_date + "Overview: "
+                      + movie.overview + "Poster Path: " + str(movie.poster_path))
 
 
 @bot.command()
@@ -133,38 +133,42 @@ async def getmovie(ctx, arg):
 
 @bot.event
 async def on_reaction_add(reaction, user):
-    write_log(my_log_file, "Reaction requested tmdbid " + str(reaction.message.embeds[0].footer.text))
+    if user.id != bot.user.id:
+        write_log(my_log_file, "Reaction requested tmdbid " + str(reaction.message.embeds[0].footer.text))
 
-    # add tmdb movie id to radarr via apii
-    movie = Movie()
-    moviedetails = movie.details(int(reaction.message.embeds[0].footer.text))
+        # add tmdb movie id to radarr via apii
+        movie = Movie()
+        moviedetails = movie.details(int(reaction.message.embeds[0].footer.text))
 
-    # prepare dictionary json
-    movieaddjson = {"title": moviedetails.title,
-                    "qualityProfileId": 1,
-                    "titleSlug": moviedetails.title.lower().replace(' ', '-') + "-" + str(moviedetails.id),
-                    "images": [
-                        {"covertype": "poster", "url": "https://image.tmdb.org/t/p/w200" + moviedetails.poster_path}],
-                    "tmdbId": moviedetails.id,
-                    "profileId": 1,
-                    "year": int(datetime.strptime(moviedetails.release_date, '%Y-%m-%d').year),
-                    "rootFolderPath": "/movies/",
-                    "monitored": True,
-                    "addOptions": {"searchForMovie": True}
-                    }
-    write_log(my_log_file, "Add Movie Request: " + json.dumps(movieaddjson))
+        # prepare dictionary json
+        movieaddjson = {"title": moviedetails.title,
+                        "qualityProfileId": 1,
+                        "titleSlug": moviedetails.title.lower().replace(' ', '-') + "-" + str(moviedetails.id),
+                        "images": [
+                            {"covertype": "poster",
+                             "url": "https://image.tmdb.org/t/p/w200" + moviedetails.poster_path}],
+                        "tmdbId": moviedetails.id,
+                        "profileId": 1,
+                        "year": int(datetime.strptime(moviedetails.release_date, '%Y-%m-%d').year),
+                        "rootFolderPath": "/movies/",
+                        "monitored": True,
+                        "addOptions": {"searchForMovie": True}
+                        }
+        write_log(my_log_file, "Add Movie Request: " + json.dumps(movieaddjson))
 
-    # post the add movie request
-    radarraddmovie = radarrSession.post('{0}/api/movie?apikey={1}'.format(radarr_host_url, radarr_api_key),
-                                         json=movieaddjson)
+        # post the add movie request
+        radarraddmovie = radarrSession.post('{0}/api/movie?apikey={1}'.format(radarr_host_url, radarr_api_key),
+                                            json=movieaddjson)
 
-    write_log(my_log_file, str(radarraddmovie.json()))
+        write_log(my_log_file, str(radarraddmovie.json()))
 
-    # post to discord - completed message
-    await bot.get_channel(reaction.message.channel.id).send(moviedetails.title + " has been added to Radarr, set to "
-                                                                                 "monitored and search has started!")
+        # post to discord - completed message
+        await bot.get_channel(reaction.message.channel.id).send(
+            moviedetails.title + " has been added to Radarr, set to "
+                                 "monitored and search has started!")
 
-    write_log(my_log_file, moviedetails.title + " has been added to Radarr, set to monitored and search has started!")
+        write_log(my_log_file,
+                  moviedetails.title + " has been added to Radarr, set to monitored and search has started!")
 
 
 @bot.event
