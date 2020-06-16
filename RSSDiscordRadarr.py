@@ -91,6 +91,111 @@ async def checknew(ctx):
 
 
 @bot.command()
+async def checkpop(ctx):
+    # pulling all the movies in the radarr db
+    radarrMovies = radarrSession.get('{0}/api/movie?apikey={1}'.format(radarr_host_url, radarr_api_key))
+    write_log(my_log_file, "Connected to Radarr movie api.")
+    # list that contains all the moviedb ids that exist in radarr db
+    ids = []
+    # go through the json and pull all tmdb ids into an array
+    for title in radarrMovies.json():
+        ids.append(title["tmdbId"])
+    write_log(my_log_file, "Loaded all the current TMDB movies ids into memory that exist in your Radarr library.")
+
+    # get upcoming movies to blu ray from themoviedb
+    movies = Movie()
+    popularmovies = movies.popular()
+
+    # go through all the movies that came out this month and if they dont exist in radarr post them to discord
+    for movie in popularmovies:
+        # if the movie doesnt exist in radarr post to discord
+        if movie.id not in ids:
+            embed = discord.Embed(title=movie.title + " [" + str(movie.id) + "]", colour=discord.Colour(0xb45818),
+                                  url="http://image.tmdb.org/t/p/w185" + str(movie.poster_path),
+                                  description=movie.overview)
+            embed.set_thumbnail(url="http://image.tmdb.org/t/p/w185" + str(movie.poster_path))
+            embed.set_author(name="Discordarr")
+            embed.set_footer(text=movie.id)
+            emoji = '\N{THUMBS UP SIGN}'
+            m = await ctx.send(content=movie.title + " (Released: " + movie.release_date + ")", embed=embed)
+            await m.add_reaction(emoji)
+
+            write_log(my_log_file, "Title: " + movie.title + " [" + str(
+                movie.id) + "]" + "Release Date: " + movie.release_date + "Overview: "
+                      + movie.overview + "Poster Path: " + str(movie.poster_path))
+
+
+@bot.command()
+async def checknowplaying(ctx):
+    # pulling all the movies in the radarr db
+    radarrMovies = radarrSession.get('{0}/api/movie?apikey={1}'.format(radarr_host_url, radarr_api_key))
+    write_log(my_log_file, "Connected to Radarr movie api.")
+    # list that contains all the moviedb ids that exist in radarr db
+    ids = []
+    # go through the json and pull all tmdb ids into an array
+    for title in radarrMovies.json():
+        ids.append(title["tmdbId"])
+    write_log(my_log_file, "Loaded all the current TMDB movies ids into memory that exist in your Radarr library.")
+
+    # get upcoming movies to blu ray from themoviedb
+    movies = Movie()
+    nowplayingmovies = movies.now_playing()
+
+    # go through all the movies that came out this month and if they dont exist in radarr post them to discord
+    for movie in nowplayingmovies:
+        # if the movie doesnt exist in radarr post to discord
+        if movie.id not in ids:
+            embed = discord.Embed(title=movie.title + " [" + str(movie.id) + "]", colour=discord.Colour(0xb45818),
+                                  url="http://image.tmdb.org/t/p/w185" + str(movie.poster_path),
+                                  description=movie.overview)
+            embed.set_thumbnail(url="http://image.tmdb.org/t/p/w185" + str(movie.poster_path))
+            embed.set_author(name="Discordarr")
+            embed.set_footer(text=movie.id)
+            emoji = '\N{THUMBS UP SIGN}'
+            m = await ctx.send(content=movie.title + " (Released: " + movie.release_date + ")", embed=embed)
+            await m.add_reaction(emoji)
+
+            write_log(my_log_file, "Title: " + movie.title + " [" + str(
+                movie.id) + "]" + "Release Date: " + movie.release_date + "Overview: "
+                      + movie.overview + "Poster Path: " + str(movie.poster_path))
+
+
+@bot.command()
+async def checktoprated(ctx):
+    # pulling all the movies in the radarr db
+    radarrMovies = radarrSession.get('{0}/api/movie?apikey={1}'.format(radarr_host_url, radarr_api_key))
+    write_log(my_log_file, "Connected to Radarr movie api.")
+    # list that contains all the moviedb ids that exist in radarr db
+    ids = []
+    # go through the json and pull all tmdb ids into an array
+    for title in radarrMovies.json():
+        ids.append(title["tmdbId"])
+    write_log(my_log_file, "Loaded all the current TMDB movies ids into memory that exist in your Radarr library.")
+
+    # get upcoming movies to blu ray from themoviedb
+    movies = Movie()
+    topratedmovies = movies.top_rated()
+
+    # go through all the movies that came out this month and if they dont exist in radarr post them to discord
+    for movie in topratedmovies:
+        # if the movie doesnt exist in radarr post to discord
+        if movie.id not in ids:
+            embed = discord.Embed(title=movie.title + " [" + str(movie.id) + "]", colour=discord.Colour(0xb45818),
+                                  url="http://image.tmdb.org/t/p/w185" + str(movie.poster_path),
+                                  description=movie.overview)
+            embed.set_thumbnail(url="http://image.tmdb.org/t/p/w185" + str(movie.poster_path))
+            embed.set_author(name="Discordarr")
+            embed.set_footer(text=movie.id)
+            emoji = '\N{THUMBS UP SIGN}'
+            m = await ctx.send(content=movie.title + " (Released: " + movie.release_date + ")", embed=embed)
+            await m.add_reaction(emoji)
+
+            write_log(my_log_file, "Title: " + movie.title + " [" + str(
+                movie.id) + "]" + "Release Date: " + movie.release_date + "Overview: "
+                      + movie.overview + "Poster Path: " + str(movie.poster_path))
+
+
+@bot.command()
 async def getmovie(ctx, arg):
     write_log(my_log_file, "GetMovie command requested tmdbid " + arg)
 
