@@ -26,13 +26,6 @@ parser = configparser.ConfigParser()
 parser.read('discordarr.config')
 write_log(my_log_file, "Loaded config file discordarr.config")
 
-# the moviedatabase connection
-tmdbapi = TMDb()
-tmdbapi.api_key = parser.get('tmdb', 'tmdbapikey')
-tmdbapi.language = parser.get('tmdb', 'tmdblanguage')
-tmdbapi.debug = True
-write_log(my_log_file, "Loaded TMDB configuration.")
-
 # radarr connection
 radarr_host_url = parser.get('radarr', 'radarrhosturl')
 radarr_api_key = parser.get('radarr', 'radarrapikey')
@@ -57,6 +50,14 @@ async def ping(ctx):
 
 @bot.command()
 async def checknew(ctx):
+    # the moviedatabase connection
+    # needs to be at each function call to do a "refresh"
+    tmdbapi = TMDb()
+    tmdbapi.api_key = parser.get('tmdb', 'tmdbapikey')
+    tmdbapi.language = parser.get('tmdb', 'tmdblanguage')
+    tmdbapi.debug = True
+    write_log(my_log_file, "Loaded TMDB configuration.")
+
     # pulling all the movies in the radarr db
     radarrMovies = radarrSession.get('{0}/api/movie?apikey={1}'.format(radarr_host_url, radarr_api_key))
     write_log(my_log_file, "Connected to Radarr movie api.")
@@ -92,6 +93,14 @@ async def checknew(ctx):
 
 @bot.command()
 async def checkpop(ctx):
+    # the moviedatabase connection
+    # needs to be at each function call to do a "refresh"
+    tmdbapi = TMDb()
+    tmdbapi.api_key = parser.get('tmdb', 'tmdbapikey')
+    tmdbapi.language = parser.get('tmdb', 'tmdblanguage')
+    tmdbapi.debug = True
+    write_log(my_log_file, "Loaded TMDB configuration.")
+
     # pulling all the movies in the radarr db
     radarrMovies = radarrSession.get('{0}/api/movie?apikey={1}'.format(radarr_host_url, radarr_api_key))
     write_log(my_log_file, "Connected to Radarr movie api.")
@@ -127,6 +136,14 @@ async def checkpop(ctx):
 
 @bot.command()
 async def checknowplaying(ctx):
+    # the moviedatabase connection
+    # needs to be at each function call to do a "refresh"
+    tmdbapi = TMDb()
+    tmdbapi.api_key = parser.get('tmdb', 'tmdbapikey')
+    tmdbapi.language = parser.get('tmdb', 'tmdblanguage')
+    tmdbapi.debug = True
+    write_log(my_log_file, "Loaded TMDB configuration.")
+
     # pulling all the movies in the radarr db
     radarrMovies = radarrSession.get('{0}/api/movie?apikey={1}'.format(radarr_host_url, radarr_api_key))
     write_log(my_log_file, "Connected to Radarr movie api.")
@@ -162,6 +179,14 @@ async def checknowplaying(ctx):
 
 @bot.command()
 async def checktoprated(ctx):
+    # the moviedatabase connection
+    # needs to be at each function call to do a "refresh"
+    tmdbapi = TMDb()
+    tmdbapi.api_key = parser.get('tmdb', 'tmdbapikey')
+    tmdbapi.language = parser.get('tmdb', 'tmdblanguage')
+    tmdbapi.debug = True
+    write_log(my_log_file, "Loaded TMDB configuration.")
+
     # pulling all the movies in the radarr db
     radarrMovies = radarrSession.get('{0}/api/movie?apikey={1}'.format(radarr_host_url, radarr_api_key))
     write_log(my_log_file, "Connected to Radarr movie api.")
